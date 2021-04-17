@@ -117,3 +117,46 @@ eckmann-hilton α β = (inv horizontal-comp-simp) ∙ (comp-agree α β) ∙ hor
 
     horizontal-comp-simp' : α ⋆' β ≡ β ∙ α
     horizontal-comp-simp' = remove-annoying-refl' β α
+
+-- Lemma 2.2.1 action on paths preserve path equality
+ap :
+  {A B : Set} {x y : A} →
+  (f : A → B) (p : x ≡ y) → f x ≡ f y
+ap f refl = refl
+
+-- Lemma 2.2.2 functions are functors
+-- (i) functions preserves composition
+ap-preserves-composition :
+  {A B : Set} {x y z : A} {f : A → B} →
+  (p : x ≡ y) (q : y ≡ z) →
+  ap f (p ∙ q) ≡ (ap f p) ∙ (ap f q)
+ap-preserves-composition refl q = refl
+
+-- (ii) functions preserves inverses
+ap-preserves-inverses :
+  {A B : Set} {x y z : A} {f : A → B} →
+  (p : x ≡ y) →
+  ap f (inv p) ≡ inv (ap f p)
+ap-preserves-inverses refl = refl
+
+-- (iii) functors compose
+_∘_ :
+  {A B C : Set} →
+  (g : B → C) (f : A → B) →
+  A → C
+(g ∘ f) x = g (f x)
+
+ap-preserves-function-composition :
+  {A B C : Set} {x y z : A} {f : A → B} {g : B → C} →
+  (p : x ≡ y) →
+  ap g (ap f p) ≡ ap (g ∘ f) p
+ap-preserves-function-composition refl = refl
+
+-- (iv) identity maps to identity
+ap-identity-map :
+  {A B : Set} {x y : A} →
+  (p : x ≡ y) →
+  ap (λ x → x) p ≡ p
+ap-identity-map refl = refl
+
+
