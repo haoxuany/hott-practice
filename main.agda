@@ -159,4 +159,19 @@ ap-identity-map :
   ap (λ x → x) p ≡ p
 ap-identity-map refl = refl
 
+-- Lemma 2.3.1 transport
+transport :
+  {A : Set} {P : A → Set} {x y : A} →
+  (p : x ≡ y) →
+  P x → P y
+transport refl x = x
+
+-- Lemma 2.3.4 dependent action on paths
+apd :
+  {A : Set} {B : A → Set} {x y : A} →
+  (f : (x : A) → B x) →
+  (p : x ≡ y) →
+  transport p (f x) ≡ f y
+apd f refl = refl
+
 
