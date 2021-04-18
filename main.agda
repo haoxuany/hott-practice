@@ -214,7 +214,7 @@ homotopy : {A : Set} {P : A → Set} → (f g : (x : A) → P x) → Set
 homotopy {A = A} f g = (x : A) → f x ≡ g x
 
 _~_ = homotopy
-infixl 30 _~_
+infixl 10 _~_
 
 -- Lemma 2.4.2 homotopy is an equivalence relation
 homotopy-refl :
@@ -269,3 +269,95 @@ homotopy-natural-id f H {x = x} = remove-ends (H x) (inv commute-square)
       p ∙ q ≡ p' ∙ q → p ≡ p'
     remove-ends {p = p} {p' = p'} refl p-q-eq-p'-eq =
       (inv (right-id p)) ∙ p-q-eq-p'-eq ∙ (right-id p')
+
+-- Definition 2.4.6 quasi-inverse
+record qinv {A B : Set} (f : A → B) : Set where
+  constructor _st_and_
+  field
+    g : B → A
+    α : f ∘ g ~ λ x → x
+    β : g ∘ f ~ λ x → x
+
+-- Example 2.4.7 the identity function is a quasi-inverse
+id-qinv : {A : Set} → qinv {A} {A} (λ x → x)
+id-qinv = (λ x → x) st (λ x → refl) and (λ x → refl)
+
+-- Example 2.4.8 path concats are quasi-inverses
+preconcat-qinv :
+  {A : Set} {x y z : A} →
+  (p : x ≡ y) → qinv (λ (q : y ≡ z) → p ∙ q)
+preconcat-qinv {x = x} {y = y} {z = z} p =
+  g st α and β
+  where
+    f : y ≡ z → x ≡ z
+    f q = p ∙ q
+
+    g : x ≡ z → y ≡ z
+    g pq = (inv p) ∙ pq
+
+    α : (f ∘ g) ~ λ x → x
+    α refl = simpl p
+      where
+        simpl : {A : Set} {x y : A} → (p : x ≡ y) → p ∙ ((inv p) ∙ refl) ≡ refl
+        simpl refl = refl
+
+    β : (g ∘ f) ~ λ x → x
+    β refl = simpl p
+      where
+        simpl : {A : Set} {x y : A} → (p : x ≡ y) → (inv p) ∙ (p ∙ refl) ≡ refl
+        simpl refl = refl
+
+postconcat-qinv :
+  {A : Set} {x y z : A} →
+  (p : x ≡ y) → qinv (λ (q : z ≡ x) → q ∙ p)
+postconcat-qinv {x = x} {y = y} {z = z} p =
+  g st α and β
+  where
+    f : z ≡ x → z ≡ y
+    f q = q ∙ p
+
+    g : z ≡ y → z ≡ x
+    g qp = qp ∙ (inv p)
+
+    α : (f ∘ g) ~ λ x → x
+    α refl = left-inv p
+
+    β : (g ∘ f) ~ λ x → x
+    β refl = right-inv p
+
+-- Example 2.4.9 transport over paths induces a quasi-inverse over the inverse path
+transport-qinv :
+  {A : Set} {x y : A} →
+  (P : A → Set) (p : x ≡ y) →
+  qinv (transport P p)
+transport-qinv {x = x} {y = y} P p =
+  g st α and β
+    where
+      f : P x → P y
+      f = transport P p
+
+      g : P y → P x
+      g = transport P (inv p)
+
+      transport-equiv-paths :
+        {A : Set} {x y : A} →
+        (P : A → Set) (p q : x ≡ y) →
+        p ≡ q → {n : P x} → transport P p n ≡ transport P q n
+      transport-equiv-paths P p .p refl = refl
+
+      transport-refl-paths :
+        {A : Set} {x : A} →
+        (P : A → Set) (p : x ≡ x) →
+        p ≡ refl → {n : P x} → transport P p n ≡ n
+      transport-refl-paths P p p-refl {n = n} =
+        transport-equiv-paths P p refl p-refl {n = n}
+
+      α : (f ∘ g) ~ λ x → x
+      α x =
+        (transport-unroll {P = P} (inv p) p) ∙
+        (transport-refl-paths P ((inv p) ∙ p) (left-inv p) {n = x})
+
+      β : (g ∘ f) ~ λ x → x
+      β x =
+        (transport-unroll {P = P} p (inv p)) ∙
+        (transport-refl-paths P _ (right-inv p))
