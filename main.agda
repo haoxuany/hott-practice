@@ -154,7 +154,7 @@ ap-preserves-function-composition refl = refl
 
 -- (iv) identity maps to identity
 ap-identity-map :
-  {A B : Set} {x y : A} →
+  {A : Set} {x y : A} →
   (p : x ≡ y) →
   ap (λ x → x) p ≡ p
 ap-identity-map refl = refl
@@ -209,3 +209,63 @@ transport-natural :
   {u : P x} → transport Q p (f x u) ≡ f y (transport P p u)
 transport-natural f refl = refl
 
+-- Definition 2.4.1 homotopy between functions
+homotopy : {A : Set} {P : A → Set} → (f g : (x : A) → P x) → Set
+homotopy {A = A} f g = (x : A) → f x ≡ g x
+
+_~_ = homotopy
+infixl 30 _~_
+
+-- Lemma 2.4.2 homotopy is an equivalence relation
+homotopy-refl :
+  {A : Set} {P : A → Set} →
+  (f : (x : A) → P x) → f ~ f
+homotopy-refl f x = refl
+
+homotopy-sym :
+  {A : Set} {P : A → Set} →
+  (f g : (x : A) → P x) → f ~ g → g ~ f
+homotopy-sym f g f-g-hom x = inv (f-g-hom x)
+
+homotopy-trans :
+  {A : Set} {P : A → Set} →
+  (f g h : (x : A) → P x) → f ~ g → g ~ h → f ~ h
+homotopy-trans f g h f-g-hom g-h-hom x = (f-g-hom x) ∙ (g-h-hom x)
+
+-- Lemma 2.4.3 homotopies are natural transformations between functions
+homotopy-natural :
+  {A B : Set} {x y : A} {p : x ≡ y} →
+  (f g : A → B) (H : f ~ g) →
+  (H x) ∙ (ap g p) ≡ (ap f p) ∙ (H y)
+homotopy-natural {x = x} {p = refl} f g h = right-id (h x)
+
+-- Corollary 2.4.4 naturality over identity
+homotopy-natural-id :
+  {A : Set} →
+  (f : A → A) (H : f ~ (λ x → x)) →
+  {x : A} → H (f x) ≡ ap f (H x)
+homotopy-natural-id f H {x = x} = remove-ends (H x) (inv commute-square)
+  where
+    f-x-path : f x ≡ x
+    f-x-path = H x
+
+    -- annoying to reason about, not hard
+    replace-inline :
+      {A : Set} {x y z : A} →
+      {p : x ≡ y} {q q' : y ≡ z} {r : x ≡ z} →
+      p ∙ q ≡ r → q ≡ q' → p ∙ q' ≡ r
+    replace-inline {p = refl} q-r q-q' = (inv q-q') ∙ q-r
+
+    commute-square : (ap f (H x)) ∙ (H x) ≡ (H (f x)) ∙ (H x)
+    commute-square = inv
+      (replace-inline
+      (homotopy-natural {p = f-x-path} f (λ x → x) H)
+      (ap-identity-map (H x)))
+
+    -- annoying to reason about, not hard
+    remove-ends :
+      {A : Set} {x y z : A} →
+      {p p' : x ≡ y} → (q : y ≡ z) →
+      p ∙ q ≡ p' ∙ q → p ≡ p'
+    remove-ends {p = p} {p' = p'} refl p-q-eq-p'-eq =
+      (inv (right-id p)) ∙ p-q-eq-p'-eq ∙ (right-id p')
