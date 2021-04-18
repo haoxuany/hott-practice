@@ -362,3 +362,60 @@ transport-qinv {x = x} {y = y} P p =
       β x =
         (transport-unroll {P = P} p (inv p)) ∙
         (transport-refl-paths P _ (right-inv p))
+
+-- 2.4.10 a specific definition of equivalence
+record isequiv {A B : Set} (f : A → B) : Set where
+  constructor _st_also_st_
+  field
+    g : B → A
+    α : f ∘ g ~ λ x → x
+    h : B → A
+    β : h ∘ f ~ λ x → x
+
+-- (i) quasi-inverses induce equivalences
+qinv-to-isequiv :
+  {A B : Set} → (f : A → B) → qinv f → isequiv f
+qinv-to-isequiv f (g st α and β) = g st α also g st β
+
+-- (ii) equivalences induce quasi-inverses
+isequiv-to-qinv :
+  {A B : Set} → (f : A → B) → isequiv f → qinv f
+isequiv-to-qinv {A} {B} f (g st α also h st β) = g st α and β'
+  where
+    g~h∘f∘g : g ~ (h ∘ (f ∘ g))
+    g~h∘f∘g x = inv (β (g x))
+
+    h∘f∘g~h : (h ∘ (f ∘ g)) ~ h
+    h∘f∘g~h x = ap h (α x)
+
+    g~h : g ~ h
+    g~h = homotopy-trans _ _ _ g~h∘f∘g h∘f∘g~h
+
+    β' : g ∘ f ~ λ x → x
+    β' x = g~h (f x) ∙ (β x)
+
+-- Definition 2.4.11 equivalence between types
+record _≃_ (A B : Set) : Set where
+  constructor _withequiv_
+  field
+    f : A → B
+    e : isequiv f
+
+-- Lemma 2.4.12 type equivalence is a equivalence relation
+equiv-refl : {A : Set} → A ≃ A
+equiv-refl =
+  (λ x → x) withequiv
+  (qinv-to-isequiv (λ x → x) ((λ x → x) st (λ x → refl) and (λ x → refl)))
+
+equiv-sym : {A B : Set} → A ≃ B → B ≃ A
+equiv-sym (f withequiv equiv) with (isequiv-to-qinv f equiv)
+... | g st α and β = g withequiv qinv-to-isequiv g (f st β and α)
+
+equiv-trans : {A B C : Set} → A ≃ B → B ≃ C → A ≃ C
+equiv-trans (fab withequiv equivab) (fbc withequiv equivbc)
+  with (isequiv-to-qinv fab equivab) | (isequiv-to-qinv fbc equivbc)
+... | gab st αab and βab | gbc st αbc and βbc =
+      (fbc ∘ fab) withequiv
+      (qinv-to-isequiv (fbc ∘ fab) ((gab ∘ gbc)
+        st (λ x → ap fbc (αab (gbc x)) ∙ (αbc x))
+        and λ x → ap gab (βbc (fab x)) ∙ (βab x)))
