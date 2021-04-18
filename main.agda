@@ -141,9 +141,9 @@ ap-preserves-inverses refl = refl
 
 -- (iii) functors compose
 _∘_ :
-  {A B C : Set} →
-  (g : B → C) (f : A → B) →
-  A → C
+  ∀ {n m p} {A : Set n} {B : A → Set m} {C : (x : A) → B x → Set p} →
+  (g : {x : A} → (y : B x) → C x y) (f : (x : A) → B x) →
+  (x : A) → C x (f x)
 (g ∘ f) x = g (f x)
 
 ap-preserves-function-composition :
@@ -161,17 +161,51 @@ ap-identity-map refl = refl
 
 -- Lemma 2.3.1 transport
 transport :
-  {A : Set} {P : A → Set} {x y : A} →
-  (p : x ≡ y) →
+  {A : Set} {x y : A} →
+  (P : A → Set) (p : x ≡ y) →
   P x → P y
-transport refl x = x
+transport _ refl x = x
 
 -- Lemma 2.3.4 dependent action on paths
 apd :
   {A : Set} {B : A → Set} {x y : A} →
   (f : (x : A) → B x) →
   (p : x ≡ y) →
-  transport p (f x) ≡ f y
+  transport B p (f x) ≡ f y
 apd f refl = refl
 
+-- Lemma 2.3.5 non-dependent transport moves around ap path
+transport-const :
+  {A B : Set} {x y : A} →
+  (p : x ≡ y) (b : B) →
+  transport (λ _ → B) p b ≡ b
+transport-const refl b = refl
+
+-- Lemma 2.3.8 relation between dependent and nondependent transport
+apd-ap :
+  {A B : Set} {x y : A} →
+  (f : A → B) (p : x ≡ y) →
+  apd f p ≡ (transport-const p (f x)) ∙ (ap f p)
+apd-ap f refl = refl
+
+-- Lemma 2.3.9 transport unrolling
+transport-unroll :
+  {A : Set} {P : A → Set} {x y z : A} →
+  (p : x ≡ y) (q : y ≡ z) →
+  {u : P x} → transport P q (transport P p u) ≡ transport P (p ∙ q) u
+transport-unroll refl refl = refl
+
+-- Lemma 2.3.10 transport over ap
+transport-ap :
+  {A B : Set} {P : B → Set} {x y : A} →
+  (f : A → B) (p : x ≡ y) →
+  {u : P (f x)} → transport (P ∘ f) p u ≡ transport P (ap f p) u
+transport-ap f refl = refl
+
+-- Lemma 2.3.11 transport naturality
+transport-natural :
+  {A : Set} {P Q : A → Set} {x y : A} →
+  (f : (x : A) → P x → Q x) (p : x ≡ y) →
+  {u : P x} → transport Q p (f x u) ≡ f y (transport P p u)
+transport-natural f refl = refl
 
