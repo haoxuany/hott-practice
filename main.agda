@@ -104,19 +104,20 @@ comp-agree α β = comp-agree' α β
 eckmann-hilton : {A : Set} {a : A} → (α β : loop-space-2d A a) → α ∙ β ≡ β ∙ α
 eckmann-hilton α β = (inv horizontal-comp-simp) ∙ (comp-agree α β) ∙ horizontal-comp-simp'
   where
-    -- not hard, just annoying to do directly.
-    remove-annoying-refl :
-      {A : Set} {a b c : A} (p : a ≡ b) (q : b ≡ c) → (p ∙ refl) ∙ q ≡ p ∙ q
-    remove-annoying-refl refl refl = refl
-    remove-annoying-refl' :
-      {A : Set} {a b c : A} (p : a ≡ b) (q : b ≡ c) → p ∙ (q ∙ refl) ≡ p ∙ q
-    remove-annoying-refl' refl refl = refl
-
     horizontal-comp-simp : α ⋆ β ≡ α ∙ β
-    horizontal-comp-simp = remove-annoying-refl α β
+    horizontal-comp-simp = remove α β
+      where
+        -- not hard, just annoying to do directly.
+        remove :
+          {A : Set} {a b c : A} (p : a ≡ b) (q : b ≡ c) → (p ∙ refl) ∙ q ≡ p ∙ q
+        remove refl refl = refl
 
     horizontal-comp-simp' : α ⋆' β ≡ β ∙ α
-    horizontal-comp-simp' = remove-annoying-refl' β α
+    horizontal-comp-simp' = remove β α
+      where
+        remove :
+          {A : Set} {a b c : A} (p : a ≡ b) (q : b ≡ c) → p ∙ (q ∙ refl) ≡ p ∙ q
+        remove refl refl = refl
 
 -- Lemma 2.2.1 action on paths preserve path equality
 ap :
