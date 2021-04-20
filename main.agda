@@ -419,3 +419,64 @@ equiv-trans (fab withequiv equivab) (fbc withequiv equivbc)
       (qinv-to-isequiv (fbc ∘ fab) ((gab ∘ gbc)
         st (λ x → ap fbc (αab (gbc x)) ∙ (αbc x))
         and λ x → ap gab (βbc (fab x)) ∙ (βab x)))
+
+record _×_ (A : Set) (B : Set) : Set where
+  constructor _,,_
+  field
+    fst : A
+    snd : B
+
+fst : {A B : Set} → A × B → A
+fst (fst ,, snd) = fst
+
+snd : {A B : Set} → A × B → B
+snd (fst ,, snd) = snd
+
+-- Function 2.6.1 a path between products induces a pair of paths between elements
+product-path-to-elem-path :
+  {A B : Set} {x y : A × B} →
+  x ≡ y → (fst x ≡ fst y) × (snd x ≡ snd y)
+product-path-to-elem-path refl = refl ,, refl
+
+-- Theorem 2.6.2 product path to element paths is an equivalence
+product-path-to-elem-path-equiv :
+  {A B : Set} {x y : A × B} → isequiv (product-path-to-elem-path {A} {B} {x} {y})
+product-path-to-elem-path-equiv {A} {B} {x} {y} =
+  qinv-to-isequiv product-path-to-elem-path (g st α and β)
+    where
+      f = product-path-to-elem-path
+
+      g : (fst x ≡ fst y) × (snd x ≡ snd y) → x ≡ y
+      g = g' x y
+        where
+          g' : (x y : A × B) → (fst x ≡ fst y) × (snd x ≡ snd y) → x ≡ y
+          g' (fst₁ ,, snd₁) (.fst₁ ,, .snd₁) (refl ,, refl) = refl
+
+      α : f ∘ g ~ λ x → x
+      α (refl ,, refl) = refl
+
+      β : g ∘ f ~ λ x → x
+      β refl = refl
+
+-- Theorem 2.6.4 transport over a path to a product fiber is a product of fibers over a path
+product-transport :
+  {Z : Set} {A B : Z → Set} {z w : Z} →
+  (p : z ≡ w) (x : (A z) × (B z))  →
+  transport (λ z → (A z) × (B z)) p x ≡ (transport A p (fst x) ,, transport B p (snd x))
+product-transport refl (fst ,, snd) = refl
+
+-- Definition of pair⁼
+pair⁼ :
+  {A B : Set} {x y : A × B} →
+  (fst x ≡ fst y) × (snd x ≡ snd y) →
+  x ≡ y
+pair⁼ {A} {B} {x} {y} = isequiv.g (product-path-to-elem-path-equiv {A} {B} {x} {y})
+
+-- Theorem 2.6.5 functions are functors over products
+function-functor-pair :
+  {A B A' B' : Set} →
+  (g : A → A') (h : B → B') →
+  {x y : A × B} {p : fst x ≡ fst y} {q : snd x ≡ snd y} →
+  ap (λ x → (g (fst x) ,, h (snd x))) (pair⁼ (p ,, q)) ≡ pair⁼ (ap g p ,, ap h q)
+function-functor-pair g h {x = fstx ,, sndx} {y = .fstx ,, .sndx} {p = refl} {q = refl} = refl
+
