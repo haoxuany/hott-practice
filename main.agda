@@ -480,3 +480,86 @@ function-functor-pair :
   ap (λ x → (g (fst x) ,, h (snd x))) (pair⁼ (p ,, q)) ≡ pair⁼ (ap g p ,, ap h q)
 function-functor-pair g h {x = fstx ,, sndx} {y = .fstx ,, .sndx} {p = refl} {q = refl} = refl
 
+-- Theorem 2.7.2 dependent functions are fibrations over Σ-types
+record Sigma (A : Set) (B : A → Set) : Set where
+  constructor _,,_
+  field
+    pr1 : A
+    pr2 : B pr1
+
+syntax Sigma A (λ x → y) = Σ x of A , y
+
+pr1 : {A : Set} {B : A → Set} → Σ x of A , B x → A
+pr1 (left ,, right) = left
+
+pr2 : {A : Set} {B : A → Set} → (v : Σ x of A , B x) → B (pr1 {A} {B} v)
+pr2 (left ,, right) = right
+
+-- Theorem 2.7.2 dependent functions are functors over fibrations
+function-fibration-product :
+  {A : Set} {P : A → Set} {w w' : Σ x of A , P x} →
+  (w ≡ w') ≃ (Σ p of (pr1 w ≡ pr1 w') , (transport P p (pr2 w) ≡ pr2 w'))
+function-fibration-product {A = A} {P = P} {w = w} {w' = w'} =
+  f withequiv qinv-to-isequiv f (g st α and β)
+  where
+    f :
+      {w w' : Σ x of A , P x} →
+      (w ≡ w') → (Σ p of (pr1 w ≡ pr1 w') , (transport P p (pr2 w) ≡ pr2 w'))
+    f refl = refl ,, refl
+
+    g :
+      {w w' : Σ x of A , P x} →
+      (Σ p of (pr1 w ≡ pr1 w') , (transport P p (pr2 w) ≡ pr2 w')) → (w ≡ w')
+    g {w = w1 ,, w2} {w' = .w1 ,, .w2} (refl ,, refl) = refl
+
+    α : f ∘ g ~ λ x → x
+    α (refl ,, refl) = refl
+
+    β : g ∘ f ~ λ x → x
+    β refl = refl
+
+-- Corollary 2.7.3 computation rule for Σ types
+computation-sigma :
+  {A : Set} {P : A → Set} →
+  (z : Σ x of A , P x) → z ≡ (pr1 z ,, pr2 z)
+computation-sigma z =
+  isequiv.g (_≃_.e function-fibration-product)
+  (refl ,, refl)
+
+-- Theorem 2.8.1 : only one path between unit elements
+record Unit : Set where
+  constructor unit
+
+single-path-between-unit : {x y : Unit} → (x ≡ y) ≃ Unit
+single-path-between-unit {x = x} {y = y} =
+  f withequiv qinv-to-isequiv f
+  (g st α and β)
+  where
+    f : x ≡ y → Unit
+    f _ = unit
+
+    g : {x y : Unit} → Unit → x ≡ y
+    g {x = unit} {y = unit} _ = refl
+
+    α : f ∘ g ~ λ x → x
+    α unit = refl
+
+    β : g ∘ f ~ λ x → x
+    β refl = refl
+
+-- Theorem 2.9.2 path between functions are homotopies
+happly :
+  {A : Set} {B : A → Set} {f g : (x : A) → B x} →
+  (f ≡ g) → f ~ g
+happly refl x = refl
+
+-- Axiom 2.9.3 function extensionality
+postulate
+  funext-equiv : {A : Set} {B : A → Set} {f g : (x : A) → B x} →
+    isequiv (happly {A} {B} {f} {g})
+
+funext :
+  {A : Set} {B : A → Set} {f g : (x : A) → B x} →
+  f ~ g → f ≡ g
+funext = isequiv.g funext-equiv
+
